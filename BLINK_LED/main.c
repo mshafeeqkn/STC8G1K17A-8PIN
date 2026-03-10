@@ -1,11 +1,6 @@
 // Core SFRs (8051 compatible)
-__sfr __at(0x80) P0;
-__sfr __at(0x90) P1;
-__sfr __at(0xA0) P2;
 __sfr __at(0xB0) P3;
-__sfr __at(0xD0) PSW;
-__sfr __at(0xE0) ACC;
-__sfr __at(0xF0) B;
+
 
 // STC8G port mode registers
 __sfr __at(0xB1) P3M1;
