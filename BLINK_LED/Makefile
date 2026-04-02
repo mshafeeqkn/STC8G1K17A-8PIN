@@ -1,7 +1,7 @@
 CC      = sdcc
 CFLAGS  = -mmcs51 --model-small --xram-size 1024 --code-size 8192
 STCGAL  = /Library/Frameworks/Python.framework/Versions/3.6/bin/stcgal
-PORT    = /dev/cu.usbserial-1410      # change to your adapter port
+PORT    = /dev/cu.usbserial-1420      # change to your adapter port
 PLATFRM = stc8g
 CLOCK_FREQ = 32000
 
