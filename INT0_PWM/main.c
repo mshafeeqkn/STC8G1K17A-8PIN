@@ -12,7 +12,7 @@ __sbit __at (0xB2) BTN;     // Pin 7 (P3.2/INT0)
 
 // --- Global Variables ---
 volatile unsigned char pwm_tick = 0;
-volatile unsigned char duty_cycle = 1;
+volatile unsigned char duty_cycle = 100;
 
 void Init_System(void) {
     // 1. GPIO Configuration
@@ -22,7 +22,7 @@ void Init_System(void) {
     // 2. Timer 0 for PWM
     AUXR |= 0x80;
     TMOD &= 0xF0;
-    TL0 = 0xF6; TH0 = 0xFF;
+    TL0 = 0x00; TH0 = 0xFF;
     TR0 = 1; ET0 = 1;
 
     // 3. Classic INT0 Configuration
@@ -44,16 +44,14 @@ void Timer0_Isr(void) __interrupt (1) {
     LED = (pwm_tick < duty_cycle) ? 1 : 0;
 }
 
-volatile uint8_t duty_cycles[] = {1, 7, 21, 40, 70, 100};
-volatile uint8_t duty_idx = 0;
+#define DC_SIZE     6
+__code const uint8_t duty_cycles[] = {0, 1, 14, 34, 62, 100};
+volatile uint8_t duty_idx = 5;
 
 // External Interrupt 0 ISR (Falling Edge)
 void External0_Isr(void) __interrupt (0) {
-    unsigned int i;
-    for(i = 0; i < 2000; i++); // Debounce
-
     if (BTN == 0) { // Verify falling edge
-        duty_idx = (duty_idx + 1) % 6;
+        duty_idx = (duty_idx + 1) % DC_SIZE;
         duty_cycle = duty_cycles[duty_idx];
     }
 }
