@@ -1,5 +1,11 @@
 #include <8051.h>
 #include <stdint.h>
+#include <stdio.h>
+
+#include "eeprom.h"
+#include "uart.h"
+
+#define DC_SIZE     6
 
 // --- STC8G Specific Register Definitions ---
 __sfr __at (0x8E) AUXR;
@@ -13,6 +19,8 @@ __sbit __at (0xB2) BTN;     // Pin 7 (P3.2/INT0)
 // --- Global Variables ---
 volatile unsigned char pwm_tick = 0;
 volatile unsigned char duty_cycle = 100;
+__code const uint8_t duty_cycles[] = {0, 1, 14, 34, 62, 100};
+volatile uint8_t duty_idx = DC_SIZE - 1;
 
 void Init_System(void) {
     // 1. GPIO Configuration
@@ -43,10 +51,6 @@ void Timer0_Isr(void) __interrupt (1) {
     if (pwm_tick >= 100) pwm_tick = 0;
     LED = (pwm_tick < duty_cycle) ? 1 : 0;
 }
-
-#define DC_SIZE     6
-__code const uint8_t duty_cycles[] = {0, 1, 14, 34, 62, 100};
-volatile uint8_t duty_idx = 5;
 
 // External Interrupt 0 ISR (Falling Edge)
 void External0_Isr(void) __interrupt (0) {

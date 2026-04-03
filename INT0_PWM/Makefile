@@ -1,20 +1,28 @@
 CC      = sdcc
+# Added -c to pattern rule, but keeping general flags here
 CFLAGS  = -mmcs51 --model-small --xram-size 1024 --code-size 8192
 STCGAL  = /Library/Frameworks/Python.framework/Versions/3.6/bin/stcgal
-PORT    = /dev/cu.usbserial-1420      # change to your adapter port
+PORT    = /dev/cu.usbserial-1420
 PLATFRM = stc8g
+# Frequency in kHz (32000 = 32MHz)
 CLOCK_FREQ = 32000
 
 TARGET  = main
-SOURCES = main.c
+SOURCES = main.c eeprom.c uart.c
+# This automatically creates a list of .rel files from your .c files
+RELS    = $(SOURCES:.c=.rel)
 
 all: $(TARGET).hex
 
-# Compile + link to IHX
-$(TARGET).ihx: $(SOURCES)
-	$(CC) $(CFLAGS) $(SOURCES) -o $(TARGET).ihx
+# 1. Link the .rel files into the final .ihx
+$(TARGET).ihx: $(RELS)
+	$(CC) $(CFLAGS) $(RELS) -o $(TARGET).ihx
 
-# Convert IHX -> HEX using packihx (ships with SDCC)
+# 2. Pattern rule: Compile each .c file into a .rel file
+%.rel: %.c
+	$(CC) $(CFLAGS) -c $< -o $@
+
+# 3. Convert IHX -> HEX
 $(TARGET).hex: $(TARGET).ihx
 	packihx $(TARGET).ihx > $(TARGET).hex
 
