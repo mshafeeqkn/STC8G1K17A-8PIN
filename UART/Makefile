@@ -5,10 +5,12 @@ STCGAL  = /Library/Frameworks/Python.framework/Versions/3.6/bin/stcgal
 PORT    = /dev/cu.usbserial-1420
 PLATFRM = stc8g
 # Frequency in kHz (32000 = 32MHz)
+# CLOCK_FREQ = 11059
 CLOCK_FREQ = 32000
 
 TARGET  = main
 SOURCES = main.c
+
 # This automatically creates a list of .rel files from your .c files
 RELS    = $(SOURCES:.c=.rel)
 
@@ -34,3 +36,4 @@ clean:
 	      $(TARGET).ihx $(TARGET).hex
 
 .PHONY: all flash clean
+# stcgal -P stc8g -p /dev/cu.usbserial-1420 -t 11059 -b 115200 main.hex

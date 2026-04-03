@@ -1,9 +1,5 @@
 #include <8051.h>
 #include <stdint.h>
-#include <stdio.h>
-
-#include "eeprom.h"
-#include "uart.h"
 
 #define DC_SIZE     6
 
@@ -40,9 +36,17 @@ void Init_System(void) {
     EA = 1;    // Global Enable
 }
 
+void delay_ms(unsigned int ms) {
+    unsigned int i;
+    while(ms--) {
+        for(i = 0; i < 4000; i++); // Approximate for 32MHz
+    }
+}
+
 void main(void) {
     Init_System();
-    while (1);
+    while (1) {
+    }
 }
 
 // Timer 0 ISR (PWM)
