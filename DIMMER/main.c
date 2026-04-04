@@ -1,5 +1,6 @@
 #include <stdint.h>
 #include <8051.h>
+#include <stdio.h> // Required for printf
 
 __sbit __at(0xB3) LED;   // 0xB0 + 3 -> P3 + .3
 
@@ -13,6 +14,56 @@ volatile uint16_t sys_ticks = 0;   // Global timebase for IR (1 tick = 100us)
 volatile uint8_t pwm_count = 0;    // Counter for 100Hz PWM cycle
 __code const uint8_t duty_cycles[] = {0, 1, 2, 5, 20, 50, 100};
 volatile uint8_t duty_cycle = duty_cycles[0];  // Target brightness (0-100)
+
+
+// --- STC8G Specific Registers ---
+__sfr __at (0x8E) AUXR;
+__sfr __at (0xB1) P3M1;
+__sfr __at (0xB2) P3M0;
+
+// --- Bit Definitions for SDCC ---
+__sbit __at (0x8E) TR1; // Timer 1 Run control
+__sbit __at (0x99) TI;  // Transmit Interrupt Flag
+
+/**
+ * 1. The Bridge for Printf
+ * SDCC's printf() calls putchar() internally.
+ */
+int putchar(int c) {
+    while (!TI);    // Wait until the previous character is sent
+    TI = 0;         // Clear the flag manually
+    SBUF = (char)c; // Load the new character into the buffer
+    return c;
+}
+
+/**
+ * 2. Optimized Initialization
+ * Reviewed version of the working 11.0592MHz / 9600 Baud setup.
+ */
+void UART1_Init(void) {
+    // GPIO: P3.1 (TX) to Push-Pull, P3.0 (RX) to High-Impedance
+    P3M1 &= ~0x02; P3M0 |= 0x02;
+    P3M1 |= 0x01;  P3M0 &= ~0x01;
+
+    // UART1: 8-bit variable baud (Mode 1)
+    SCON = 0x50;          
+    
+    // Timer 1: Set to 1T mode (Fast) and use for UART1
+    AUXR |= 0x40;         
+    AUXR &= ~0x01;        
+
+    // Timer 1: Mode 2 (8-bit auto-reload)
+    TMOD &= 0x0F;
+    TMOD |= 0x20;
+
+    // Baud Rate: 9600 @ 11.0592 MHz
+    // 256 - (11059200 / 32 / 9600) = 220 (0xDC)
+    TH1 = 0xDC;           
+    TL1 = 0xDC;
+
+    TR1 = 1; // Start Timer 1
+    TI = 1;  // CRITICAL: Set TI to 1 so the first printf doesn't hang!
+}
 
 void Timer0_Setup(void) {
 // 1. GPIO Configuration (STC8G)
@@ -78,10 +129,12 @@ void main(void) {
     P3M1 &= ~(1 << 3);  // Clear P3M1.3
     P3M0 |= (1 << 3);   // Set P3M0.3
 
+    UART1_Init();
     Timer0_Setup();
     while(1) {
         i = (i + 1) % 7;
         duty_cycle = duty_cycles[i];
+        printf("DS: %u\r\n", duty_cycle);
         delay_ms(500);
     }
 }
