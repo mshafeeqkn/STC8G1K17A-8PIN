@@ -18,7 +18,6 @@ void Init_NEC_Decoder(void) {
 }
 
 void INT0_ISR(void) __interrupt (0) {
-    LED = 1;
     ir_duration = sys_ticks;
     sys_ticks = 0;
     data[index++] = ir_duration;

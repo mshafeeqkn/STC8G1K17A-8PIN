@@ -21,13 +21,33 @@ void main(void) {
     Timer0_Setup();
     Init_NEC_Decoder();
     while(1) {
-        // duty_cycle_index = (duty_cycle_index + 1) % 7;
-        // printf("DS Index: %u\r\n", duty_cycle_index);
-        delay_ms(500);
-
+        delay_ms(1000); 
         if (ir_ready) {
             unsigned long code = decode_nec();
             printf("Code: %08lX\r\n", code);
+            switch(code >> 24) {
+                case 0x6E:
+                    duty_cycle_index = 0;
+                    break;
+                case 0x71:
+                    duty_cycle_index = 1;
+                    break;
+                case 0x6F:
+                    duty_cycle_index = 2;
+                    break;
+                case 0x75:
+                    duty_cycle_index = 3;
+                    break;
+                case 0x74:
+                    duty_cycle_index = 4;
+                    break;
+                case 0x7A:
+                    duty_cycle_index = 5;
+                    break;
+                case 0x6D:
+                    duty_cycle_index = 6;
+                    break;
+            }
             IE0 = 0;
             ir_ready = 0;
             EX0 = 1;
