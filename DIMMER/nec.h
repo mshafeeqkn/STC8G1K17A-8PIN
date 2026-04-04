@@ -1,11 +1,18 @@
+/**
+ * @file    nec.h
+ * @brief   Header for NEC IR Protocol Decoder.
+ */
+
 #ifndef __NEC_H__
 #define __NEC_H__
 
 #include "config.h"
 
-extern volatile __bit         ir_ready;
-void INT0_ISR(void) __interrupt (0);
-unsigned long decode_nec(void);
-void Init_NEC_Decoder(void);
+// Flag indicating a complete IR frame has been successfully captured
+extern volatile __bit g_ir_data_ready;
 
-#endif
+void NEC_Decoder_Init(void);
+void NEC_INT0_ISR(void) __interrupt (0);
+unsigned long NEC_DecodeCommand(void);
+
+#endif // __NEC_H__

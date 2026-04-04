@@ -1,42 +1,52 @@
+/**
+ * @file    uart.c
+ * @brief   UART Driver for debug communications.
+ * @details Configures Timer 1 as the baud rate generator for UART1. Includes
+ * the necessary bridge function to allow printf() functionality via SDCC.
+ */
+
 #include <8051.h>
 #include "config.h"
+
 /**
- * 1. The Bridge for Printf
- * SDCC's printf() calls putchar() internally.
+ * @brief   Hardware bridge for SDCC's standard library printf().
+ * @details SDCC internally calls putchar() to send individual characters.
+ * @param   c The character to transmit.
+ * @return  The transmitted character.
  */
 int putchar(int c) {
-    while (!TI);    // Wait until the previous character is sent
-    TI = 0;         // Clear the flag manually
-    SBUF = (char)c; // Load the new character into the buffer
+    while (!TI);    // Block until the UART is ready (previous transmission finished)
+    TI = 0;         // Manually clear the Transmit Interrupt flag
+    SBUF = (char)c; // Load the new character into the Serial Buffer
     return c;
 }
 
 /**
- * 2. Optimized Initialization
- * Reviewed version of the working 11.0592MHz / 9600 Baud setup.
+ * @brief   Initializes UART1 for 9600 Baud at an 11.0592MHz system clock.
  */
 void UART1_Init(void) {
-    // GPIO: P3.1 (TX) to Push-Pull, P3.0 (RX) to High-Impedance
-    P3M1 &= ~0x02; P3M0 |= 0x02;
-    P3M1 |= 0x01;  P3M0 &= ~0x01;
+    // 1. GPIO Configuration
+    // Set P3.1 (TX) to Push-Pull output, P3.0 (RX) to High-Impedance input
+    P3M1 &= ~0x02; P3M0 |= 0x02; // P3.1 TX config
+    P3M1 |= 0x01;  P3M0 &= ~0x01; // P3.0 RX config
 
-    // UART1: 8-bit variable baud (Mode 1)
-    SCON = 0x50;
+    // 2. UART Configuration
+    SCON = 0x50; // Set UART1 to Mode 1 (8-bit variable baud rate), Enable Receiver
 
-    // Timer 1: Set to 1T mode (Fast) and use for UART1
-    AUXR |= 0x40;
-    AUXR &= ~0x01;
+    // 3. Timer 1 Configuration (Baud Rate Generator)
+    AUXR |= 0x40;  // Set Timer 1 to 1T mode (Fast mode, no prescaler)
+    AUXR &= ~0x01; // Select Timer 1 as the baud rate generator for UART1
 
-    // Timer 1: Mode 2 (8-bit auto-reload)
-    TMOD &= 0x0F;
-    TMOD |= 0x20;
+    TMOD &= 0x0F;  // Clear Timer 1 configuration bits
+    TMOD |= 0x20;  // Configure Timer 1 for Mode 2 (8-bit auto-reload)
 
-    // Baud Rate: 9600 @ 11.0592 MHz
-    // 256 - (11059200 / 32 / 9600) = 220 (0xDC)
-    TH1 = 0xDC;
-    TL1 = 0xDC;
+    // 4. Baud Rate Calculation
+    // Target: 9600 Baud @ 11.0592 MHz system clock
+    // Calculation: 256 - (11059200 / 32 / 9600) = 220 (0xDC)
+    TH1 = 0xDC; // Preload high byte
+    TL1 = 0xDC; // Preload low byte
 
+    // 5. Start Peripherals
     TR1 = 1; // Start Timer 1
-    TI = 1;  // CRITICAL: Set TI to 1 so the first printf doesn't hang!
+    TI = 1;  // CRITICAL: Pre-set TI flag so the first printf() call doesn't hang infinitely
 }
-

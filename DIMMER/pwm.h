@@ -1,12 +1,20 @@
+/**
+ * @file    pwm.h
+ * @brief   Header for Software PWM generation.
+ */
+
 #ifndef __PWM_H__
 #define __PWM_H__
 
 #include "config.h"
 
-extern volatile uint8_t  duty_cycle_index;
-extern volatile uint16_t sys_ticks;
+// Expose the current brightness level index to main application
+extern volatile uint8_t  g_current_brightness_level;
 
-void Timer0_Setup(void);
-void Timer0_Isr(void) __interrupt (1);
+// Expose the 100us system tick counter for use by the IR decoder timebase
+extern volatile uint16_t g_system_ticks_100us;
 
-#endif
+void PWM_Timer0_Init(void);
+void PWM_Timer0_ISR(void) __interrupt (1);
+
+#endif // __PWM_H__
