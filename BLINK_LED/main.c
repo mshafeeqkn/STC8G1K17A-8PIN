@@ -1,5 +1,5 @@
 // Core SFRs (8051 compatible)
-__sfr __at(0xB0) P3;
+__sbit __at(0xB3) LED;   // 0xB0 + 3 -> P3 + .3
 
 
 // STC8G port mode registers
@@ -22,7 +22,9 @@ void main(void) {
     P3M0 |= (1 << 3);   // Set P3M0.3
 
     while(1) {
-        P3 ^= (1 << 3);  // Toggle P3.3
+        LED = 1;  // Turn on P3.3
+        delay();
+        LED = 0;  // Turn off P3.3
         delay();
     }
 }

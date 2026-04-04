@@ -58,6 +58,7 @@ void Timer0_Isr(void) __interrupt (1) {
 
 // External Interrupt 0 ISR (Falling Edge)
 void External0_Isr(void) __interrupt (0) {
+    delay_ms(20);
     if (BTN == 0) { // Verify falling edge
         duty_idx = (duty_idx + 1) % DC_SIZE;
         duty_cycle = duty_cycles[duty_idx];

@@ -5,7 +5,8 @@ STCGAL  = /Library/Frameworks/Python.framework/Versions/3.6/bin/stcgal
 PORT    = /dev/cu.usbserial-1420
 PLATFRM = stc8g
 # Frequency in kHz (32000 = 32MHz)
-CLOCK_FREQ = 32000
+# CLOCK_FREQ = 32000
+CLOCK_FREQ = 11059
 
 TARGET  = main
 SOURCES = main.c
