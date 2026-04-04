@@ -4,7 +4,7 @@
 #include "config.h"
 #include "pwm.h"
 
-static volatile uint16_t sys_ticks = 0;   // Global timebase for IR (1 tick = 100us)
+volatile uint16_t sys_ticks = 0;   // Global timebase for IR (1 tick = 100us)
 static volatile uint8_t pwm_count = 0;    // Counter for 100Hz PWM cycle
 volatile uint8_t  duty_cycle_index = 0;
 

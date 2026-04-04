@@ -1,5 +1,7 @@
 #ifndef __CONFIG_H__
 
+#include <8051.h>
+
 __sbit __at(0xB3) LED;   // 0xB0 + 3 -> P3 + .3
 
 // Core SFRs (8051 compatible)

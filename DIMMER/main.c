@@ -1,9 +1,9 @@
 #include <stdint.h>
-#include <8051.h>
 #include <stdio.h> // Required for printf
 #include "config.h"
 #include "uart.h"
 #include "pwm.h"
+#include "nec.h"
 
 void delay_ms(unsigned int ms) {
     unsigned int i;
@@ -19,9 +19,18 @@ void main(void) {
 
     UART1_Init();
     Timer0_Setup();
+    Init_NEC_Decoder();
     while(1) {
-        duty_cycle_index = (duty_cycle_index + 1) % 7;
-        printf("DS Index: %u\r\n", duty_cycle_index);
+        // duty_cycle_index = (duty_cycle_index + 1) % 7;
+        // printf("DS Index: %u\r\n", duty_cycle_index);
         delay_ms(500);
+
+        if (ir_ready) {
+            unsigned long code = decode_nec();
+            printf("Code: %08lX\r\n", code);
+            IE0 = 0;
+            ir_ready = 0;
+            EX0 = 1;
+        }
     }
 }

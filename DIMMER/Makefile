@@ -8,7 +8,7 @@ PLATFRM = stc8g
 CLOCK_FREQ = 11059
 
 TARGET  = main
-SOURCES = main.c uart.c pwm.c
+SOURCES = main.c uart.c pwm.c nec.c
 
 # This automatically creates a list of .rel files from your .c files
 RELS    = $(SOURCES:.c=.rel)
