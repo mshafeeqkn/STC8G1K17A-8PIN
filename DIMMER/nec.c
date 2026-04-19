@@ -24,20 +24,20 @@ volatile unsigned int  g_current_pulse_duration;
  */
 void NEC_Decoder_Init(void) {
     // INT0 Setup (P3.2 configured as IR Receiver Input)
-    P3M1 |= 0x04;  // Set Port 3 Mode 1 bit 2
-    P3M0 &= ~0x04; // Clear Port 3 Mode 0 bit 2 (P3.2 is now High-Z Input)
+    P3M1 |= 0x08;  // Set Port 3 Mode 1 bit 3
+    P3M0 &= ~0x08; // Clear Port 3 Mode 0 bit 3 (P3.3 is now High-Z Input)
 
-    IT0 = 1;       // Configure INT0 for Falling-edge trigger
-    EX0 = 1;       // Enable External Interrupt 0
+    IT1 = 1;       // Configure INT1 for Falling-edge trigger
+    EX1 = 1;       // Enable External Interrupt 1
     EA  = 1;       // Enable Global Interrupts
 }
 
 /**
- * @brief   External Interrupt 0 Service Routine.
+ * @brief   External Interrupt 2 Service Routine.
  * @details Captures the elapsed time since the last falling edge to determine
  * the length of the IR pulses.
  */
-void NEC_INT0_ISR(void) __interrupt (0) {
+void NEC_INT1_ISR(void) __interrupt (2) {
     // Snapshot the time elapsed since the last interrupt
     g_current_pulse_duration = g_system_ticks_100us;
     g_system_ticks_100us = 0; // Reset timebase for the next measurement
@@ -47,7 +47,7 @@ void NEC_INT0_ISR(void) __interrupt (0) {
 
     // Check if the expected number of pulses for a full NEC frame has been collected
     if(g_ir_pulse_index == IR_CAPTURE_LENGTH) {
-        EX0 = 0;             // Temporarily disable INT0 to prevent overwrite
+        EX1 = 0;             // Temporarily disable INT1 to prevent overwrite
         g_ir_pulse_index = 0; // Reset index for next capture
         g_ir_data_ready = 1; // Signal main loop that data is ready to be decoded
     }

@@ -12,7 +12,7 @@
 extern volatile __bit g_ir_data_ready;
 
 void NEC_Decoder_Init(void);
-void NEC_INT0_ISR(void) __interrupt (0);
+void NEC_INT1_ISR(void) __interrupt (2);
 unsigned long NEC_DecodeCommand(void);
 
 #endif // __NEC_H__

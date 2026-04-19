@@ -25,9 +25,9 @@ __code const uint8_t g_brightness_levels[DIMMER_STEPS_COUNT] = {0, 1, 2, 5, 20, 
  */
 void PWM_Timer0_Init(void) {
     // 1. GPIO Configuration (STC8G)
-    // Configure P3.3 (LED Pin) to Push-Pull mode
-    P3M0 |= 0x08;
-    P3M1 &= ~0x08;
+    // Configure P3.2 (LED Pin) to Push-Pull mode
+    P3M0 |= 0x04;
+    P3M1 &= ~0x04;
 
     // 2. Timer 0 Setup: Target 100us Heartbeat
     AUXR |= 0x80;  // Configure Timer 0 in 1T (fast) mode (No prescaler)
