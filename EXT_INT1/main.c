@@ -14,19 +14,19 @@ void int1_isr(void) __interrupt (2) {
 }
 
 void main(void) {
-    /* 1. Configure P3.2 (INT0) as High-Impedance Input */
-    /* Bit 2: M1=1, M0=0 */
+    /* 1. Configure P3.2 (INT1) as High-Impedance Input */
+    /* Bit 3: M1=1, M0=0 */
     P3M1 |= 0x08;
     P3M0 &= ~0x08;
 
     /* 2. Configure P3.3 (LED) as Push-Pull Output */
-    /* Bit 3: M1=0, M0=1 */
+    /* Bit 2: M1=0, M0=1 */
     P3M1 &= ~0x04;
     P3M0 |= 0x04;
 
     /* 3. Setup Interrupt */
     IT1 = 1;  // Falling edge trigger
-    EX1 = 1;  // Enable INT0
+    EX1 = 1;  // Enable INT1
     EA  = 1;  // Enable Global Interrupts
 
     while (1) {
