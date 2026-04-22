@@ -11,7 +11,7 @@
 #include <8051.h>
 
 /* --- Hardware Pin Definitions --- */
-// P3.3 mapped for COB LED PWM output (0xB0 + 3)
+// P3.2 mapped for COB LED PWM output (0xB0 + 2)
 __sbit __at(0xB2) COB_LED_PIN;
 /* --- Bit Definitions for SDCC Compatibility --- */
 __sbit __at (0x8E) TR1; // Timer 1 Run control bit
