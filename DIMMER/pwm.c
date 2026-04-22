@@ -10,11 +10,12 @@
 #include <stdio.h>
 #include "config.h"
 #include "pwm.h"
+#include "nec.h"
 
 /* --- Global and Static Variables --- */
 volatile uint16_t g_system_ticks_100us = 0;   // Global timebase for IR (1 tick = 100us)
 volatile uint8_t  g_current_brightness_level = 0; // Index for current duty cycle
-
+volatile uint8_t  g_prev_brightness = 0;
 static volatile uint8_t s_pwm_cycle_counter = 0;    // Counter tracking the 100Hz PWM cycle
 
 // Array storing predefined duty cycle percentages (0% to 100%) in Code memory
@@ -53,6 +54,11 @@ void PWM_Timer0_ISR(void) __interrupt (1) {
 
     // 2. IR Timebase Task
     g_system_ticks_100us++; // Increment tick for INT0 to calculate pulse widths
+    if(g_ir_pulse_index > 0 && g_system_ticks_100us > 300) {
+        // Repeat pulse or Junk pulse wrongly added in NEC array
+        // Flush the array out
+        g_ir_pulse_index = 0;
+    }
 
     // 3. Software PWM Task (Establishes 100Hz base frequency)
     s_pwm_cycle_counter++;
@@ -61,24 +67,25 @@ void PWM_Timer0_ISR(void) __interrupt (1) {
     }
 
     // 4. Duty Cycle Application
-    if(g_brightness_levels[g_current_brightness_level] == 1) {
+    uint8_t brightness_index = g_current_brightness_level > DIMMER_STEPS_COUNT ? g_prev_brightness : g_current_brightness_level;
+    if(g_brightness_levels[brightness_index] == 1) {
         // Edge Case: Ultra Dim Level
         // Turn LED on for a very short duration manually using NOPs, bypassing standard tick math
         if (s_pwm_cycle_counter == 0) {
-            COB_LED_PIN = 1; // Assert Pin High
-            for(uint8_t i = 0; i < 25; i++) {
+            COB_LED_PIN = 0; // Assert Pin High
+            for(uint8_t i = 0; i < 15; i++) {
                 __asm__("nop"); // Micro-delay
             }
-            COB_LED_PIN = 0; // De-assert Pin Low
+            COB_LED_PIN = 1; // De-assert Pin Low
         } else {
-            COB_LED_PIN = 0; // Ensure pin remains off for rest of cycle
+            COB_LED_PIN = 1; // Ensure pin remains off for rest of cycle
         }
     } else {
         // Standard Case: Toggle LED pin based on the configured duty cycle percentage
-        if (s_pwm_cycle_counter < g_brightness_levels[g_current_brightness_level]) {
-            COB_LED_PIN = 1; // Pin ON while within active duty cycle window
+        if (s_pwm_cycle_counter < g_brightness_levels[brightness_index]) {
+            COB_LED_PIN = 0; // Pin ON while within active duty cycle window
         } else {
-            COB_LED_PIN = 0; // Pin OFF once duty cycle threshold is passed
+            COB_LED_PIN = 1; // Pin OFF once duty cycle threshold is passed
         }
     }
 }

@@ -10,6 +10,7 @@
 
 // Flag indicating a complete IR frame has been successfully captured
 extern volatile __bit g_ir_data_ready;
+extern volatile uint8_t       g_ir_pulse_index;
 
 void NEC_Decoder_Init(void);
 void NEC_INT1_ISR(void) __interrupt (2);

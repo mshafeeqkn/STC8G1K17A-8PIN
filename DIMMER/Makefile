@@ -39,6 +39,7 @@ $(TARGET).hex: $(TARGET).ihx
 
 # Flash Stage: Upload the compiled .hex file to the microcontroller
 flash: $(TARGET).hex
+	killall screen
 	$(STCGAL) -P $(PLATFRM) -p $(PORT) -t $(CLOCK_FREQ) -b 115200 $(TARGET).hex
 
 # Cleanup: Remove all compiler generated artifacts

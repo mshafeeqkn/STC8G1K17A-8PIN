@@ -25,6 +25,9 @@
 #define IR_CMD_LED      0x68
 #define IR_CMD_SLEEP    0x71
 
+#define IR_CMD_LOCK     IR_CMD_LED
+
+
 /**
  * @brief   Software blocking delay.
  * @param   ms Number of milliseconds to delay.
@@ -51,35 +54,48 @@ void main(void) {
     NEC_Decoder_Init();
     // Infinite application loop
     while(1) {
-        System_Delay_ms(1000);
+        // System_Delay_ms(100);
 
         // Check if a complete IR frame has been captured
-        if (g_ir_data_ready) {
+        while (g_ir_data_ready) {
             unsigned long decoded_ir_code = NEC_DecodeCommand();
+            uint8_t ir_cmd = decoded_ir_code >> 24;
 
-            // Shift down to evaluate only the command byte (highest 8 bits)
-            switch(decoded_ir_code >> 24) {
-                case IR_CMD_POWER:
-                    g_current_brightness_level = 0;
-                    break;
-                case IR_CMD_NUM1:
-                    g_current_brightness_level = 1;
-                    break;
-                case IR_CMD_NUM2:
-                    g_current_brightness_level = 2;
-                    break;
-                case IR_CMD_NUM3:
-                    g_current_brightness_level = 3;
-                    break;
-                case IR_CMD_NUM4:
-                    g_current_brightness_level = 4;
-                    break;
-                case IR_CMD_NUM5:
-                    g_current_brightness_level = 5;
-                    break;
-                case IR_CMD_BOOST:
-                    g_current_brightness_level = 6;
-                    break;
+            if(g_current_brightness_level != 255 ||
+                    (g_current_brightness_level == 255 && ir_cmd == IR_CMD_LOCK)
+              ) {
+                // Shift down to evaluate only the command byte (highest 8 bits)
+                switch(ir_cmd) {
+                    case IR_CMD_POWER:
+                        g_current_brightness_level = 0;
+                        break;
+                    case IR_CMD_NUM1:
+                        g_current_brightness_level = 1;
+                        break;
+                    case IR_CMD_NUM2:
+                        g_current_brightness_level = 2;
+                        break;
+                    case IR_CMD_NUM3:
+                        g_current_brightness_level = 3;
+                        break;
+                    case IR_CMD_NUM4:
+                        g_current_brightness_level = 4;
+                        break;
+                    case IR_CMD_NUM5:
+                        g_current_brightness_level = 5;
+                        break;
+                    case IR_CMD_BOOST:
+                        g_current_brightness_level = 6;
+                        break;
+                    case IR_CMD_LOCK:
+                        if(g_current_brightness_level != 255) {
+                            g_prev_brightness = g_current_brightness_level;
+                            g_current_brightness_level = 255;
+                        } else {
+                            g_current_brightness_level = g_prev_brightness;
+                        }
+                        break;
+                }
             }
 
             printf("Brightness = %u\r\n", g_current_brightness_level);
