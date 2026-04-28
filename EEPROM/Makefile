@@ -1,5 +1,6 @@
 CC      = sdcc
-CFLAGS  = -mmcs51 --model-small --code-size 8192
+CFLAGS  = -mmcs51 --model-small --code-size 3000
+# OPTIONS = -o eeprom_erase_enabled=False
 TARGET  = main
 STCGAL  = /Library/Frameworks/Python.framework/Versions/3.6/bin/stcgal
 PORT    = /dev/cu.usbserial-1420
@@ -15,7 +16,8 @@ $(TARGET).hex: $(TARGET).ihx
 	packihx $(TARGET).ihx > $(TARGET).hex
 
 flash: $(TARGET).hex
-	$(STCGAL) -P $(PLATFRM) -p $(PORT) -t $(CLOCK_FREQ) -b 115200 $(TARGET).hex
+	killall screen || true
+	$(STCGAL) $(OPTIONS) -P $(PLATFRM) -p $(PORT) -t $(CLOCK_FREQ) -b 115200 $(TARGET).hex
 
 clean:
 	rm -f *.rel *.lst *.map *.mem *.rst *.sym *.asm *.lk *.ihx *.hex

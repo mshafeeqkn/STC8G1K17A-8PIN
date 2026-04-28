@@ -27,4 +27,14 @@ __sfr __at (0xB2) P3M0; // Port 3 Mode configuration register 0
 // Total number of brightness levels available for the dimmer
 #define DIMMER_STEPS_COUNT 7
 
+/* --- IAP Special Function Registers --- */
+__sfr __at (0xC2) IAP_DATA;
+__sfr __at (0xC3) IAP_ADDRH;
+__sfr __at (0xC4) IAP_ADDRL;
+__sfr __at (0xC5) IAP_CMD;
+__sfr __at (0xC6) IAP_TRIG;
+__sfr __at (0xC7) IAP_CONTR;
+__sfr __at (0xF5) IAP_TPS;
+
+
 #endif // __CONFIG_H__

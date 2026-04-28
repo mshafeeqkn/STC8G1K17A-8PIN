@@ -17,7 +17,7 @@ PLATFRM = stc8g
 CLOCK_FREQ = 11059 # Target frequency in kHz (11.0592MHz)
 
 TARGET  = main
-SOURCES = main.c uart.c pwm.c nec.c
+SOURCES = main.c uart.c pwm.c nec.c eeprom.c
 
 # Dynamically generate list of relocatable object files (.rel) from C sources
 RELS    = $(SOURCES:.c=.rel)

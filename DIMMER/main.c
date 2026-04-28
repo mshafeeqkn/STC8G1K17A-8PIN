@@ -11,6 +11,7 @@
 #include "uart.h"
 #include "pwm.h"
 #include "nec.h"
+#include "eeprom.h"
 
 /* --- IR Command Code Definitions --- */
 // Extracted upper byte (command byte) of the NEC codes mapped to brightness levels
@@ -48,61 +49,18 @@ void main(void) {
     P3M1 &= ~(0x04);  // Clear Port 3 Mode 1 bit 2
     P3M0 |=  (0x04);  // Set Port 3 Mode 0 bit 2
 
-    // Initialize system peripherals
+    COB_LED_PIN = 1;
+    EEPROM_Write(0x0000, 10); // Save
+    EEPROM_Write(0x0001, 11); // Save
+    EEPROM_Write(0x0002, 12); // Save
+    EEPROM_Write(0x0003, 6); // Save
+    COB_LED_PIN = 0;
     UART1_Init();
-    PWM_Timer0_Init();
-    NEC_Decoder_Init();
-    // Infinite application loop
     while(1) {
-        // System_Delay_ms(100);
-
-        // Check if a complete IR frame has been captured
-        while (g_ir_data_ready) {
-            unsigned long decoded_ir_code = NEC_DecodeCommand();
-            uint8_t ir_cmd = decoded_ir_code >> 24;
-
-            if(g_current_brightness_level != 255 ||
-                    (g_current_brightness_level == 255 && ir_cmd == IR_CMD_LOCK)
-              ) {
-                // Shift down to evaluate only the command byte (highest 8 bits)
-                switch(ir_cmd) {
-                    case IR_CMD_POWER:
-                        g_current_brightness_level = 0;
-                        break;
-                    case IR_CMD_NUM1:
-                        g_current_brightness_level = 1;
-                        break;
-                    case IR_CMD_NUM2:
-                        g_current_brightness_level = 2;
-                        break;
-                    case IR_CMD_NUM3:
-                        g_current_brightness_level = 3;
-                        break;
-                    case IR_CMD_NUM4:
-                        g_current_brightness_level = 4;
-                        break;
-                    case IR_CMD_NUM5:
-                        g_current_brightness_level = 5;
-                        break;
-                    case IR_CMD_BOOST:
-                        g_current_brightness_level = 6;
-                        break;
-                    case IR_CMD_LOCK:
-                        if(g_current_brightness_level != 255) {
-                            g_prev_brightness = g_current_brightness_level;
-                            g_current_brightness_level = 255;
-                        } else {
-                            g_current_brightness_level = g_prev_brightness;
-                        }
-                        break;
-                }
-            }
-
-            printf("Brightness = %u\r\n", g_current_brightness_level);
-            // Critical Section: Reset IR state machine and re-enable interrupts
-            IE1 = 0;            // Clear External Interrupt 0 flag
-            g_ir_data_ready = 0; // Reset readiness flag
-            EX1 = 1;            // Re-enable External Interrupt 0
-        }
+        System_Delay_ms(1000);
+        printf("Data written: %X\r\n", EEPROM_Read(0x0000));
+        printf("Data written: %X\r\n", EEPROM_Read(0x0001));
+        printf("Data written: %X\r\n", EEPROM_Read(0x0002));
+        printf("Data written: %X\r\n", EEPROM_Read(0x0003));
     }
 }
