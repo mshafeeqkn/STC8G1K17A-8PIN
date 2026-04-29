@@ -8,6 +8,10 @@
 
 #include "config.h"
 
+typedef void (*on_repeat)(void);
+
+void set_on_repeat(on_repeat cb);
+
 // Flag indicating a complete IR frame has been successfully captured
 extern volatile __bit g_ir_data_ready;
 extern volatile uint8_t       g_ir_pulse_index;

@@ -54,12 +54,13 @@ void PWM_Timer0_ISR(void) __interrupt (1) {
 
     // 2. IR Timebase Task
     g_system_ticks_100us++; // Increment tick for INT0 to calculate pulse widths
+#if 0
     if(g_ir_pulse_index > 0 && g_system_ticks_100us > 300) {
         // Repeat pulse or Junk pulse wrongly added in NEC array
         // Flush the array out
         g_ir_pulse_index = 0;
     }
-
+#endif
     // 3. Software PWM Task (Establishes 100Hz base frequency)
     s_pwm_cycle_counter++;
     if (s_pwm_cycle_counter >= 100) {

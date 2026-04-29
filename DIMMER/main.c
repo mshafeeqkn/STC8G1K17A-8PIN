@@ -86,6 +86,10 @@ static void process_NEC_command(uint8_t ir_cmd) {
 /**
  * @brief   Main execution loop.
  */
+void on_button_hold() {
+    putchar('R');
+}
+
 void main(void) {
     // Configure P3.2 (COB_LED_PIN) as push-pull output for driving the MOSFET
     P3M1 &= ~(0x04);  // Clear Port 3 Mode 1 bit 2
@@ -104,12 +108,14 @@ void main(void) {
     }
 
     // Infinite application loop
+    set_on_repeat(on_button_hold);
     while(1) {
         // System_Delay_ms(100);
 
         // Check if a complete IR frame has been captured
         while (g_ir_data_ready) {
             unsigned long decoded_ir_code = NEC_DecodeCommand();
+            printf("%04X\r\n", decoded_ir_code);
             process_NEC_command(decoded_ir_code >> 24);
 
             // Critical Section: Reset IR state machine and re-enable interrupts

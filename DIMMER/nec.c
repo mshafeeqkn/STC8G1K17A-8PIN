@@ -19,6 +19,12 @@ volatile __xdata uint16_t g_ir_pulse_durations[IR_CAPTURE_LENGTH] = {0}; // Buff
 volatile uint8_t       g_ir_pulse_index = 0;
 volatile unsigned int  g_current_pulse_duration;
 
+
+static on_repeat on_button_repeat = NULL;
+void set_on_repeat(on_repeat cb) {
+    on_button_repeat = cb;
+}
+
 /**
  * @brief   Configures the External Interrupt 0 for IR signal reception.
  */
@@ -42,14 +48,22 @@ void NEC_INT1_ISR(void) __interrupt (2) {
     g_current_pulse_duration = g_system_ticks_100us;
     g_system_ticks_100us = 0; // Reset timebase for the next measurement
 
+    // The maximum width of a valid pulse is 13.4ms
+    if(g_current_pulse_duration > 136) {
+        if(g_ir_pulse_index == 2 && on_button_repeat != NULL) {
+            (*on_button_repeat)();
+        }
+        g_ir_pulse_index = 0;
+    }
+
     // Store the duration and advance the buffer index
     g_ir_pulse_durations[g_ir_pulse_index++] = g_current_pulse_duration;
 
     // Check if the expected number of pulses for a full NEC frame has been collected
     if(g_ir_pulse_index == IR_CAPTURE_LENGTH) {
-        EX1 = 0;             // Temporarily disable INT1 to prevent overwrite
+        EX1 = 0;              // Temporarily disable INT1 to prevent overwrite
         g_ir_pulse_index = 0; // Reset index for next capture
-        g_ir_data_ready = 1; // Signal main loop that data is ready to be decoded
+        g_ir_data_ready = 1;  // Signal main loop that data is ready to be decoded
     }
 }
 
