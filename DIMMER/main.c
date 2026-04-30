@@ -26,8 +26,12 @@
 #define IR_CMD_LED      0x68
 #define IR_CMD_SLEEP    0x71
 
-#define IR_CMD_LOCK                             IR_CMD_LED
+#define IR_CMD_LOCK                             IR_CMD_TIMER
+#define IR_CMD_INCR_BRIGHT                      IR_CMD_LED
+#define IR_CMD_DECR_BRIGHT                      IR_CMD_SLEEP
 #define EEPROM_PREV_BRIGHTNESS_ADDR             0x0000
+
+static uint8_t s_last_cmd = IR_CMD_POWER;
 
 /**
  * @brief   Software blocking delay.
@@ -70,13 +74,14 @@ static void process_NEC_command(uint8_t ir_cmd) {
                 break;
             case IR_CMD_LOCK:
                 if(g_current_brightness_level != 255) {
-                    g_prev_brightness = g_current_brightness_level;
+                    g_prev_brightness_level = g_current_brightness_level;
                     g_current_brightness_level = 255;
                 } else {
-                    g_current_brightness_level = g_prev_brightness;
+                    g_current_brightness_level = g_prev_brightness_level;
                 }
                 break;
         }
+        s_last_cmd = ir_cmd;
         EEPROM_Write(EEPROM_PREV_BRIGHTNESS_ADDR, g_current_brightness_level); // Save
     }
 
@@ -87,7 +92,11 @@ static void process_NEC_command(uint8_t ir_cmd) {
  * @brief   Main execution loop.
  */
 void on_button_hold() {
-    putchar('R');
+    if(s_last_cmd == IR_CMD_INCR_BRIGHT) {
+        __asm__("nop");
+    } else if(s_last_cmd == IR_CMD_DECR_BRIGHT) {
+        __asm__("nop");
+    }
 }
 
 void main(void) {

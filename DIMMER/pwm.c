@@ -5,7 +5,6 @@
  * maintaining a 100us timebase for the NEC IR decoding logic.
  */
 
-#include <8051.h>
 #include <stdint.h>
 #include <stdio.h>
 #include "config.h"
@@ -15,7 +14,7 @@
 /* --- Global and Static Variables --- */
 volatile uint16_t g_system_ticks_100us = 0;   // Global timebase for IR (1 tick = 100us)
 volatile uint8_t  g_current_brightness_level = 0; // Index for current duty cycle
-volatile uint8_t  g_prev_brightness = 0;
+volatile uint8_t  g_prev_brightness_level = 0;
 static volatile uint8_t s_pwm_cycle_counter = 0;    // Counter tracking the 100Hz PWM cycle
 
 // Array storing predefined duty cycle percentages (0% to 100%) in Code memory
@@ -54,13 +53,7 @@ void PWM_Timer0_ISR(void) __interrupt (1) {
 
     // 2. IR Timebase Task
     g_system_ticks_100us++; // Increment tick for INT0 to calculate pulse widths
-#if 0
-    if(g_ir_pulse_index > 0 && g_system_ticks_100us > 300) {
-        // Repeat pulse or Junk pulse wrongly added in NEC array
-        // Flush the array out
-        g_ir_pulse_index = 0;
-    }
-#endif
+
     // 3. Software PWM Task (Establishes 100Hz base frequency)
     s_pwm_cycle_counter++;
     if (s_pwm_cycle_counter >= 100) {
@@ -68,7 +61,8 @@ void PWM_Timer0_ISR(void) __interrupt (1) {
     }
 
     // 4. Duty Cycle Application
-    uint8_t brightness_index = g_current_brightness_level > DIMMER_STEPS_COUNT ? g_prev_brightness : g_current_brightness_level;
+    uint8_t brightness_index = g_current_brightness_level > DIMMER_STEPS_COUNT ? 
+            g_prev_brightness_level : g_current_brightness_level;
     if(g_brightness_levels[brightness_index] == 1) {
         // Edge Case: Ultra Dim Level
         // Turn LED on for a very short duration manually using NOPs, bypassing standard tick math
