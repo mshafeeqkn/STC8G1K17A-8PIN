@@ -33,6 +33,12 @@
 
 static uint8_t s_last_cmd = IR_CMD_POWER;
 
+volatile uint8_t g_current_brightness = 0;
+volatile uint8_t g_prev_brightness = 0;
+
+// Array storing predefined duty cycle percentages (0% to 100%) in Code memory
+__code const uint8_t g_brightness_levels[DIMMER_STEPS_COUNT] = {0, 1, 2, 5, 20, 50, 100};
+
 /**
  * @brief   Software blocking delay.
  * @param   ms Number of milliseconds to delay.
@@ -46,46 +52,46 @@ void System_Delay_ms(unsigned int ms) {
 }
 
 static void process_NEC_command(uint8_t ir_cmd) {
-    if(g_current_brightness_level != 255 ||
-            (g_current_brightness_level == 255 && ir_cmd == IR_CMD_LOCK)
+    if(g_current_brightness != 255 ||
+            (g_current_brightness == 255 && ir_cmd == IR_CMD_LOCK)
       ) {
         // Shift down to evaluate only the command byte (highest 8 bits)
         switch(ir_cmd) {
             case IR_CMD_POWER:
-                g_current_brightness_level = 0;
+                g_current_brightness = g_brightness_levels[0];
                 break;
             case IR_CMD_NUM1:
-                g_current_brightness_level = 1;
+                g_current_brightness = g_brightness_levels[1];
                 break;
             case IR_CMD_NUM2:
-                g_current_brightness_level = 2;
+                g_current_brightness = g_brightness_levels[2];
                 break;
             case IR_CMD_NUM3:
-                g_current_brightness_level = 3;
+                g_current_brightness = g_brightness_levels[3];
                 break;
             case IR_CMD_NUM4:
-                g_current_brightness_level = 4;
+                g_current_brightness = g_brightness_levels[4];
                 break;
             case IR_CMD_NUM5:
-                g_current_brightness_level = 5;
+                g_current_brightness = g_brightness_levels[5];
                 break;
             case IR_CMD_BOOST:
-                g_current_brightness_level = 6;
+                g_current_brightness = g_brightness_levels[6];
                 break;
             case IR_CMD_LOCK:
-                if(g_current_brightness_level != 255) {
-                    g_prev_brightness_level = g_current_brightness_level;
-                    g_current_brightness_level = 255;
+                if(g_current_brightness != 255) {
+                    g_prev_brightness = g_current_brightness;
+                    g_current_brightness = 255;
                 } else {
-                    g_current_brightness_level = g_prev_brightness_level;
+                    g_current_brightness = g_prev_brightness;
                 }
                 break;
         }
         s_last_cmd = ir_cmd;
-        EEPROM_Write(EEPROM_PREV_BRIGHTNESS_ADDR, g_current_brightness_level); // Save
+        EEPROM_Write(EEPROM_PREV_BRIGHTNESS_ADDR, g_current_brightness); // Save
     }
 
-    printf("Brightness = %u\r\n", g_current_brightness_level);
+    printf("Brightness = %u\r\n", g_current_brightness);
 }
 
 /**
@@ -110,10 +116,10 @@ void main(void) {
     NEC_Decoder_Init();
 
     // After initialization, load previous value from EEPROM
-    g_current_brightness_level = EEPROM_Read(EEPROM_PREV_BRIGHTNESS_ADDR);
+    g_current_brightness = EEPROM_Read(EEPROM_PREV_BRIGHTNESS_ADDR);
     // Sanity check: if value is invalid (e.g., 255), default to 0
-    if(g_current_brightness_level >= DIMMER_STEPS_COUNT && g_current_brightness_level != 255) {
-        g_current_brightness_level = 0;
+    if(g_current_brightness >= DIMMER_STEPS_COUNT && g_current_brightness != 255) {
+        g_current_brightness = 0;
     }
 
     // Infinite application loop

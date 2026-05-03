@@ -9,8 +9,8 @@
 #include "config.h"
 
 // Expose the current brightness level index to main application
-extern volatile uint8_t  g_current_brightness_level;
-extern volatile uint8_t  g_prev_brightness_level;
+extern volatile uint8_t  g_current_brightness;
+extern volatile uint8_t  g_prev_brightness;
 
 // Expose the 100us system tick counter for use by the IR decoder timebase
 extern volatile uint16_t g_system_ticks_100us;

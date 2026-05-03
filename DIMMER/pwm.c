@@ -13,12 +13,7 @@
 
 /* --- Global and Static Variables --- */
 volatile uint16_t g_system_ticks_100us = 0;   // Global timebase for IR (1 tick = 100us)
-volatile uint8_t  g_current_brightness_level = 0; // Index for current duty cycle
-volatile uint8_t  g_prev_brightness_level = 0;
 static volatile uint8_t s_pwm_cycle_counter = 0;    // Counter tracking the 100Hz PWM cycle
-
-// Array storing predefined duty cycle percentages (0% to 100%) in Code memory
-__code const uint8_t g_brightness_levels[DIMMER_STEPS_COUNT] = {0, 1, 2, 5, 20, 50, 100};
 
 /**
  * @brief   Initializes Timer 0 for PWM and system tick generation.
@@ -61,9 +56,7 @@ void PWM_Timer0_ISR(void) __interrupt (1) {
     }
 
     // 4. Duty Cycle Application
-    uint8_t brightness_index = g_current_brightness_level > DIMMER_STEPS_COUNT ? 
-            g_prev_brightness_level : g_current_brightness_level;
-    if(g_brightness_levels[brightness_index] == 1) {
+    if(g_current_brightness == 1) {
         // Edge Case: Ultra Dim Level
         // Turn LED on for a very short duration manually using NOPs, bypassing standard tick math
         if (s_pwm_cycle_counter == 0) {
@@ -77,7 +70,7 @@ void PWM_Timer0_ISR(void) __interrupt (1) {
         }
     } else {
         // Standard Case: Toggle LED pin based on the configured duty cycle percentage
-        if (s_pwm_cycle_counter < g_brightness_levels[brightness_index]) {
+        if (s_pwm_cycle_counter < g_current_brightness) {
             COB_LED_PIN = 0; // Pin ON while within active duty cycle window
         } else {
             COB_LED_PIN = 1; // Pin OFF once duty cycle threshold is passed
