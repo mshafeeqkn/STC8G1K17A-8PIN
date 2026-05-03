@@ -56,18 +56,25 @@ void PWM_Timer0_ISR(void) __interrupt (1) {
     }
 
     // 4. Duty Cycle Application
-    if(g_current_brightness == 1) {
-        // Edge Case: Ultra Dim Level
-        // Turn LED on for a very short duration manually using NOPs, bypassing standard tick math
+    if(g_current_brightness <= 0) {
+        // Special Case: For very low brightness levels (negative values and 0), 
+        // we treat them as ON pulses at the start of the cycle, with pulse length
+        // proportional to (128 + g_current_brightness). This makes more negative
+        // values have shorter ON pulses (longer OFF time), while 0 has a longer
+        // pulse than negative values, providing some brightness without being fully off.
         if (s_pwm_cycle_counter == 0) {
             COB_LED_PIN = 0; // Assert Pin High
-            for(uint8_t i = 0; i < 15; i++) {
+            uint8_t pulse_length = 128 + g_current_brightness;
+            for(uint8_t i = 0; i < pulse_length; i++) {
                 __asm__("nop"); // Micro-delay
             }
             COB_LED_PIN = 1; // De-assert Pin Low
         } else {
             COB_LED_PIN = 1; // Ensure pin remains off for rest of cycle
         }
+    } else if(g_current_brightness == INT8_MAX) {
+        // Special Case: Turn off LED completely for "power off" command (represented by max int8 value)
+        COB_LED_PIN = 1; // Ensure pin is off
     } else {
         // Standard Case: Toggle LED pin based on the configured duty cycle percentage
         if (s_pwm_cycle_counter < g_current_brightness) {

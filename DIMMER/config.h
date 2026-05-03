@@ -23,10 +23,6 @@ __sfr __at (0x8E) AUXR; // Auxiliary register (used for timer speed control)
 __sfr __at (0xB1) P3M1; // Port 3 Mode configuration register 1
 __sfr __at (0xB2) P3M0; // Port 3 Mode configuration register 0
 
-/* --- Application Specific Macros --- */
-// Total number of brightness levels available for the dimmer
-#define DIMMER_STEPS_COUNT 7
-
 /* --- IAP Special Function Registers --- */
 __sfr __at (0xC2) IAP_DATA;
 __sfr __at (0xC3) IAP_ADDRH;

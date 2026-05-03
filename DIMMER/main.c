@@ -30,14 +30,16 @@
 #define IR_CMD_INCR_BRIGHT                      IR_CMD_LED
 #define IR_CMD_DECR_BRIGHT                      IR_CMD_SLEEP
 #define EEPROM_PREV_BRIGHTNESS_ADDR             0x0000
+#define DIMMER_STEPS_COUNT                      11
 
 static uint8_t s_last_cmd = IR_CMD_POWER;
 
-volatile uint8_t g_current_brightness = 0;
-volatile uint8_t g_prev_brightness = 0;
+volatile int8_t g_current_brightness = 0;
+volatile int8_t g_prev_brightness = 0;
 
 // Array storing predefined duty cycle percentages (0% to 100%) in Code memory
-__code const uint8_t g_brightness_levels[DIMMER_STEPS_COUNT] = {0, 1, 2, 5, 20, 50, 100};
+// -ve means special handling for ultra dim levels less than 100us ON time
+__code const int8_t g_brightness_levels[DIMMER_STEPS_COUNT] = {-20, -5, -2, -1, 0, 1, 2, 5, 20, 50, 100};
 
 /**
  * @brief   Software blocking delay.
@@ -52,13 +54,13 @@ void System_Delay_ms(unsigned int ms) {
 }
 
 static void process_NEC_command(uint8_t ir_cmd) {
-    if(g_current_brightness != 255 ||
-            (g_current_brightness == 255 && ir_cmd == IR_CMD_LOCK)
+    if(g_current_brightness != INT8_MIN ||
+            (g_current_brightness == INT8_MIN && ir_cmd == IR_CMD_LOCK)
       ) {
         // Shift down to evaluate only the command byte (highest 8 bits)
         switch(ir_cmd) {
             case IR_CMD_POWER:
-                g_current_brightness = g_brightness_levels[0];
+                g_current_brightness = INT8_MAX; // Special value to indicate power off (no light output)
                 break;
             case IR_CMD_NUM1:
                 g_current_brightness = g_brightness_levels[1];
@@ -79,9 +81,9 @@ static void process_NEC_command(uint8_t ir_cmd) {
                 g_current_brightness = g_brightness_levels[6];
                 break;
             case IR_CMD_LOCK:
-                if(g_current_brightness != 255) {
+                if(g_current_brightness != INT8_MIN) {
                     g_prev_brightness = g_current_brightness;
-                    g_current_brightness = 255;
+                    g_current_brightness = INT8_MIN;
                 } else {
                     g_current_brightness = g_prev_brightness;
                 }
@@ -99,9 +101,9 @@ static void process_NEC_command(uint8_t ir_cmd) {
  */
 void on_button_hold() {
     if(s_last_cmd == IR_CMD_INCR_BRIGHT) {
-        __asm__("nop");
+        g_current_brightness++;
     } else if(s_last_cmd == IR_CMD_DECR_BRIGHT) {
-        __asm__("nop");
+        g_current_brightness--;
     }
 }
 
@@ -117,16 +119,15 @@ void main(void) {
 
     // After initialization, load previous value from EEPROM
     g_current_brightness = EEPROM_Read(EEPROM_PREV_BRIGHTNESS_ADDR);
-    // Sanity check: if value is invalid (e.g., 255), default to 0
-    if(g_current_brightness >= DIMMER_STEPS_COUNT && g_current_brightness != 255) {
+    // Sanity check: if value is invalid (e.g., -100), default to 0
+    if(g_current_brightness < g_brightness_levels[0] || 
+            g_current_brightness > g_brightness_levels[DIMMER_STEPS_COUNT - 1]) {
         g_current_brightness = 0;
     }
 
     // Infinite application loop
     set_on_repeat(on_button_hold);
     while(1) {
-        // System_Delay_ms(100);
-
         // Check if a complete IR frame has been captured
         while (g_ir_data_ready) {
             unsigned long decoded_ir_code = NEC_DecodeCommand();
