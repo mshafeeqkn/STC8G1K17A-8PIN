@@ -77,7 +77,9 @@ void PWM_Timer0_ISR(void) __interrupt (1) {
         COB_LED_PIN = 1; // Ensure pin is off
     } else {
         // Standard Case: Toggle LED pin based on the configured duty cycle percentage
-        if (s_pwm_cycle_counter < g_current_brightness) {
+        if (s_pwm_cycle_counter < (uint8_t)g_current_brightness) {
+            // We can typecast to uint8_t safely since g_current_brightness
+            // because the 0 and -ve values are handled in the special case above.
             COB_LED_PIN = 0; // Pin ON while within active duty cycle window
         } else {
             COB_LED_PIN = 1; // Pin OFF once duty cycle threshold is passed
