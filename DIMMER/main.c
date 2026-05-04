@@ -37,8 +37,11 @@ static uint8_t s_last_cmd = IR_CMD_POWER;
 volatile int8_t g_current_brightness = 0;
 volatile int8_t g_prev_brightness = 0;
 
-// Array storing predefined duty cycle percentages (0% to 100%) in Code memory
-// -ve means special handling for ultra dim levels less than 100us ON time
+// Array storing predefined duty cycle percentages (0% to 100%) in Code memory.
+// Negative values indicate special handling for ultra-low brightness levels,
+// where the ON time is less than 100 microseconds. These values should be
+// interpreted by the PWM control logic to produce very dim output, possibly
+// by using a fixed minimal pulse width instead of a percentage-based duty cycle.
 __code const int8_t g_brightness_levels[DIMMER_STEPS_COUNT] = {-20, -5, -2, -1, 0, 1, 2, 5, 20, 50, 100};
 
 /**
@@ -93,7 +96,7 @@ static void process_NEC_command(uint8_t ir_cmd) {
         EEPROM_Write(EEPROM_PREV_BRIGHTNESS_ADDR, g_current_brightness); // Save
     }
 
-    printf("Brightness = %u\r\n", g_current_brightness);
+    printf("Brightness = %d\r\n", g_current_brightness);
 }
 
 /**
@@ -101,9 +104,13 @@ static void process_NEC_command(uint8_t ir_cmd) {
  */
 void on_button_hold() {
     if(s_last_cmd == IR_CMD_INCR_BRIGHT) {
-        g_current_brightness++;
+        if (g_current_brightness < g_brightness_levels[DIMMER_STEPS_COUNT - 1]) {
+            g_current_brightness++;
+        }
     } else if(s_last_cmd == IR_CMD_DECR_BRIGHT) {
-        g_current_brightness--;
+        if (g_current_brightness > g_brightness_levels[0]) {
+            g_current_brightness--;
+        }
     }
 }
 
@@ -115,14 +122,14 @@ void main(void) {
     COB_LED_PIN = 1;
     UART1_Init();
     PWM_Timer0_Init();
-    NEC_Decoder_Init();
-
     // After initialization, load previous value from EEPROM
-    g_current_brightness = EEPROM_Read(EEPROM_PREV_BRIGHTNESS_ADDR);
+    int8_t eeprom_brightness = EEPROM_Read(EEPROM_PREV_BRIGHTNESS_ADDR);
     // Sanity check: if value is invalid (e.g., -100), default to 0
-    if(g_current_brightness < g_brightness_levels[0] || 
-            g_current_brightness > g_brightness_levels[DIMMER_STEPS_COUNT - 1]) {
+    if(eeprom_brightness < g_brightness_levels[0] || 
+            eeprom_brightness > g_brightness_levels[DIMMER_STEPS_COUNT - 1]) {
         g_current_brightness = 0;
+    } else {
+        g_current_brightness = eeprom_brightness;
     }
 
     // Infinite application loop

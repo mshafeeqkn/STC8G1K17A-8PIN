@@ -11,6 +11,10 @@
 #include "pwm.h"
 #include "nec.h"
 
+/* --- PWM Constants --- */
+#define LOW_BRIGHTNESS_BASE_PULSE   128              // Base pulse length for low/negative brightness levels
+#define PWM_BRIGHTNESS_OFF          INT8_MAX         // Special value representing "power off" command
+
 /* --- Global and Static Variables --- */
 volatile uint16_t g_system_ticks_100us = 0;   // Global timebase for IR (1 tick = 100us)
 static volatile uint8_t s_pwm_cycle_counter = 0;    // Counter tracking the 100Hz PWM cycle
@@ -27,8 +31,8 @@ void PWM_Timer0_Init(void) {
     // 2. Timer 0 Setup: Target 100us Heartbeat
     AUXR |= 0x80;  // Configure Timer 0 in 1T (fast) mode (No prescaler)
     TMOD &= 0xF0;  // Configure Timer 0 in 16-bit non-auto-reload mode
-    TH0 = 0xFB;    // Preload High byte (64430 decimal)
-    TL0 = 0xB6;    // Preload Low byte (64430 decimal)
+    TH0 = 0xFB;    // Preload High byte (64438 decimal)
+    TL0 = 0xB6;    // Preload Low byte (64438 decimal)
 
     // 3. Interrupt Enablement
     ET0 = 1;       // Enable Timer 0 specific interrupt
@@ -64,19 +68,21 @@ void PWM_Timer0_ISR(void) __interrupt (1) {
         // pulse than negative values, providing some brightness without being fully off.
         if (s_pwm_cycle_counter == 0) {
             COB_LED_PIN = 0; // Assert Pin High
-            uint8_t pulse_length = 128 + g_current_brightness;
+            // Add g_current_brightness to base pulse for low/negative brightness
+            uint8_t pulse_length = LOW_BRIGHTNESS_BASE_PULSE + g_current_brightness;
             for(uint8_t i = 0; i < pulse_length; i++) {
                 __asm__("nop"); // Micro-delay
             }
-            COB_LED_PIN = 1; // De-assert Pin Low
+            COB_LED_PIN = 1; // Ensure pin is off
         } else {
-            COB_LED_PIN = 1; // Ensure pin remains off for rest of cycle
+            COB_LED_PIN = 1; // Pin OFF for the rest of the cycle
         }
-    } else if(g_current_brightness == INT8_MAX) {
+    } else if(g_current_brightness == PWM_BRIGHTNESS_OFF) {
         // Special Case: Turn off LED completely for "power off" command (represented by max int8 value)
         COB_LED_PIN = 1; // Ensure pin is off
     } else {
         // Standard Case: Toggle LED pin based on the configured duty cycle percentage
+        // At this point, g_current_brightness is guaranteed to be positive (handled by previous branches).
         if (s_pwm_cycle_counter < (uint8_t)g_current_brightness) {
             // We can typecast to uint8_t safely since g_current_brightness
             // because the 0 and -ve values are handled in the special case above.
